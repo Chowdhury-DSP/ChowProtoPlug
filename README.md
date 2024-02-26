@@ -1,6 +1,5 @@
 # ChowProtoPlug
 
-![CI](https://github.com/Chowdhury-DSP/ChowProtoPlug/workflows/CI/badge.svg)
 [![License](https://img.shields.io/badge/License-BSD-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 This repository contains template code for building a Chowdhury DSP

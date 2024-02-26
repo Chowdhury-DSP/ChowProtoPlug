@@ -2,12 +2,18 @@
 
 ChowProtoPlug::ChowProtoPlug() = default;
 
-void ChowProtoPlug::prepareToPlay ([[maybe_unused]] double sampleRate, [[maybe_unused]] int samplesPerBlock)
+void ChowProtoPlug::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    module.prepare ({
+        sampleRate,
+        static_cast<uint32_t> (samplesPerBlock),
+        static_cast<uint32_t> (getMainBusNumInputChannels()),
+    });
 }
 
-void ChowProtoPlug::processAudioBlock ([[maybe_unused]] juce::AudioBuffer<float>& buffer)
+void ChowProtoPlug::processAudioBlock (juce::AudioBuffer<float>& buffer)
 {
+    module.process (buffer);
 }
 
 juce::AudioProcessorEditor* ChowProtoPlug::createEditor()

@@ -2,6 +2,8 @@
 
 #include <pch.h>
 
+#include "HotReloadedModule.h"
+
 struct Params : chowdsp::ParamHolder
 {
 };
@@ -20,5 +22,7 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
 
 private:
+    HotReloadedModule module;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChowProtoPlug)
 };
