@@ -1,7 +1,11 @@
 #include <iostream>
 #include <span>
 
+#if defined(WIN32)
+#define DLL_EXPORT extern "C" __declspec(dllexport)
+#else
 #define DLL_EXPORT extern "C"
+#endif
 
 DLL_EXPORT void test_function()
 {
@@ -12,6 +16,7 @@ struct Processor
 {
     float z = 0.0f;
 };
+
 
 DLL_EXPORT void* create_processor()
 {
@@ -44,16 +49,16 @@ DLL_EXPORT void process (void* processor, std::span<float> data)
 {
     auto& proc = *cast (processor);
 
+    // for (auto& x : data)
+    // {
+    //     const auto new_z = x;
+//
+    //     static constexpr auto alpha = 0.8f;
+    //     x = alpha * x + (1.0f - alpha) * proc.z;
+//
+    //     proc.z = new_z;
+    // }
+
     for (auto& x : data)
-    {
-        const auto new_z = x;
-
-        static constexpr auto alpha = 0.8f;
-        x = alpha * x + (1.0f - alpha) * proc.z;
-
-        proc.z = new_z;
-    }
-
-    for (auto& x : data)
-        x *= 1.0f;
+        x *= 0.01f;
 }

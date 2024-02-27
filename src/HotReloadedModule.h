@@ -1,17 +1,35 @@
 #pragma once
 
-#include <pch.h>
+#include "ModuleConfig.h"
 
-struct HotReloadedModule : chowdsp::FileListener
+struct HotReloadedModule
 {
-    HotReloadedModule();
-    ~HotReloadedModule() override;
+    explicit HotReloadedModule (const ModuleConfig& config);
+    ~HotReloadedModule();
+
+    void update_config (const ModuleConfig& config);
 
     void prepare (const juce::dsp::ProcessSpec&);
     void process (const chowdsp::BufferView<float>&) noexcept;
 
-    void listenerFileChanged() override;
-    void reload_dll();
+    void dll_source_file_changed();
+    void close_dll();
+    void load_dll();
+
+    struct FileWatcher : chowdsp::FileListener
+    {
+        explicit FileWatcher (const juce::File& file) : chowdsp::FileListener (file, 1) {}
+
+        std::function<void()> on_file_change {};
+        void listenerFileChanged() override
+        {
+            if (on_file_change)
+                on_file_change();
+        }
+    };
+
+    ModuleConfig config;
+    std::optional<FileWatcher> file_watcher;
 
     using Create_Proc_Func = void* (*)();
     Create_Proc_Func create_proc_func = nullptr;

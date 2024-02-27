@@ -1,5 +1,6 @@
 add_subdirectory(JUCE)
 add_subdirectory(chowdsp_utils)
+add_subdirectory(glaze)
 
 subproject_version(JUCE juce_version)
 message(STATUS "VERSION for JUCE: ${juce_version}")
@@ -17,6 +18,7 @@ target_link_libraries(juce_plugin_modules
         chowdsp::chowdsp_plugin_utils
         chowdsp::chowdsp_gui
         chowdsp::chowdsp_dsp_utils
+        glaze::glaze
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags

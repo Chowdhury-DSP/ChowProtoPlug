@@ -38,6 +38,7 @@ include_directories(src)
 
 target_compile_definitions(ChowProtoPlug PUBLIC
     JUCE_VST3_CAN_REPLACE_VST2=0
+    DEFAULT_MODULE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/TestModule"
 )
 
 target_link_libraries(ChowProtoPlug PRIVATE juce_plugin_modules)

@@ -4,13 +4,7 @@
 
 #include "HotReloadedModule.h"
 
-struct Params : chowdsp::ParamHolder
-{
-};
-
-using State = chowdsp::PluginStateImpl<Params>;
-
-class ChowProtoPlug : public chowdsp::PluginBase<State>
+class ChowProtoPlug : public chowdsp::PluginBase<chowdsp::PluginStateImpl<chowdsp::ParamHolder>>
 {
 public:
     ChowProtoPlug();
@@ -22,7 +16,8 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
 
 private:
-    HotReloadedModule module;
+    ModuleConfig config {};
+    std::optional<HotReloadedModule> module;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChowProtoPlug)
 };
