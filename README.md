@@ -1,9 +1,15 @@
 # ChowProtoPlug
 
-[![License](https://img.shields.io/badge/License-BSD-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+ChowProtoPlug is a simple plugin for prototyping DSP code in C++.
 
-This repository contains template code for building a Chowdhury DSP
-audio plugin.
+The plugin loads a "module" (a DLL with a simple pre-defined interface),
+and will continuously re-compile and re-load the module as you make changes
+to the module source code.
+
+At the moment, this plugin is primarily set up to work on my computer.
+I don't know how much effort it would take to get this system to work
+for any user, but this repository is open to pull requests if folks would
+like to contribute.
 
 ## Building
 
@@ -18,6 +24,13 @@ $ cd ChowProtoPlug
 $ cmake -Bbuild
 $ cmake --build build --config Release
 ```
+
+## Usage
+
+The first time you run the plugin, the plugin will create a config file,
+which can be accessed from the "Settings" menu. From here you can set the
+path for your CMake executable, and the module that you want to have
+continuously reloaded.
 
 ## License
 
