@@ -19,10 +19,9 @@ public:
     void update_config();
 
     Logger logger;
-
-private:
     ModuleConfig config {};
     HotReloadedModule module;
 
+private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChowProtoPlug)
 };

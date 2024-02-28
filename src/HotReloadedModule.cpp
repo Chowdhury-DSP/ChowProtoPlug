@@ -22,9 +22,9 @@ auto get_dll_build_dir_path (const ModuleConfig& config)
 auto get_dll_bin_path (const ModuleConfig& config)
 {
 #if JUCE_WINDOWS
-    return get_dll_build_dir_path (config).getChildFile ("Debug/ProtoPlugTestModule.dll");
+    return get_dll_build_dir_path (config).getChildFile ("Debug/" + config.module_name + ".dll");
 #elif JUCE_MAC
-    return get_dll_build_dir_path (config).getChildFile ("Debug/libProtoPlugTestModule.dylib");
+    return get_dll_build_dir_path (config).getChildFile ("Debug/lib" + config.module_name + ".dylib");
 #endif
 }
 
@@ -56,6 +56,12 @@ void HotReloadedModule::dll_source_file_changed()
     {
         juce::GenericScopedLock dll_lock { dll_reloading_mutex };
         close_dll();
+    }
+
+    if (! juce::File { config.cmake_path }.existsAsFile())
+    {
+        juce::Logger::writeToLog ("CMake executable not found! Path: " + config.cmake_path);
+        return;
     }
 
     juce::ChildProcess compiler {};
@@ -99,7 +105,9 @@ void HotReloadedModule::load_dll()
 {
     juce::GenericScopedLock dll_lock { dll_reloading_mutex };
 
-    dll.open (get_dll_bin_path (config).getFullPathName());
+    const auto module_path = get_dll_bin_path (config).getFullPathName();
+    juce::Logger::writeToLog ("Loading module from path: " + module_path);
+    dll.open (module_path);
 
     create_proc_func = reinterpret_cast<Create_Proc_Func> (dll.getFunction (create_proc_tag));
     destroy_proc_func = reinterpret_cast<Destroy_Proc_Func> (dll.getFunction (delete_proc_tag));

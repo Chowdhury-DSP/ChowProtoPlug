@@ -29,6 +29,12 @@ PluginEditor::PluginEditor (ChowProtoPlug& plug)
     };
     addAndMakeVisible (clear_logs_button);
 
+    recompile_button.onClick = [this]
+    {
+        plugin.module.dll_source_file_changed();
+    };
+    addAndMakeVisible (recompile_button);
+
     setSize (800, 600);
 }
 
@@ -48,4 +54,5 @@ void PluginEditor::resized()
     console_log.setBounds (b.removeFromTop (proportionOfHeight (0.95f)).reduced (5));
     settings_button.setBounds (b.removeFromLeft (proportionOfWidth (0.15f)).reduced (2));
     clear_logs_button.setBounds (b.removeFromLeft (proportionOfWidth (0.15f)).reduced (2));
+    recompile_button.setBounds (b.removeFromLeft (proportionOfWidth (0.15f)).reduced (2));
 }

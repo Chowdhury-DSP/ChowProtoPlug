@@ -4,7 +4,6 @@
 ChowProtoPlug::ChowProtoPlug()
 {
     update_config();
-    module.load_dll();
 }
 
 void ChowProtoPlug::update_config()
@@ -34,6 +33,7 @@ void ChowProtoPlug::update_config()
     }
 
     module.update_config (config);
+    module.dll_source_file_changed();
 }
 
 void ChowProtoPlug::prepareToPlay (double sampleRate, int samplesPerBlock)
