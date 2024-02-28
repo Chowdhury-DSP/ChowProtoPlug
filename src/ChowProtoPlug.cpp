@@ -1,6 +1,13 @@
 #include "ChowProtoPlug.h"
+#include "PluginEditor.h"
 
 ChowProtoPlug::ChowProtoPlug()
+{
+    update_config();
+    module.load_dll();
+}
+
+void ChowProtoPlug::update_config()
 {
     const auto fallback_config = [this]
     {
@@ -26,14 +33,14 @@ ChowProtoPlug::ChowProtoPlug()
         fallback_config();
     }
 
-    module.emplace (config);
+    module.update_config (config);
 }
 
 void ChowProtoPlug::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     setRateAndBufferSizeDetails (sampleRate, samplesPerBlock);
 
-    module->prepare ({
+    module.prepare ({
         sampleRate,
         static_cast<uint32_t> (samplesPerBlock),
         static_cast<uint32_t> (getMainBusNumInputChannels()),
@@ -42,12 +49,12 @@ void ChowProtoPlug::prepareToPlay (double sampleRate, int samplesPerBlock)
 
 void ChowProtoPlug::processAudioBlock (juce::AudioBuffer<float>& buffer)
 {
-    module->process (buffer);
+    module.process (buffer);
 }
 
 juce::AudioProcessorEditor* ChowProtoPlug::createEditor()
 {
-    return new chowdsp::ParametersViewEditor { *this, state, state.params };
+    return new PluginEditor { *this };
 }
 
 // This creates new instances of the plugin

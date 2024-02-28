@@ -4,7 +4,7 @@
 
 struct HotReloadedModule
 {
-    explicit HotReloadedModule (const ModuleConfig& config);
+    HotReloadedModule();
     ~HotReloadedModule();
 
     void update_config (const ModuleConfig& config);

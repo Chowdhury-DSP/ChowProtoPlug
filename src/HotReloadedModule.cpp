@@ -34,11 +34,7 @@ auto get_compile_command (const ModuleConfig& config)
 }
 } // namespace
 
-HotReloadedModule::HotReloadedModule (const ModuleConfig& c)
-{
-    update_config (c);
-    load_dll();
-}
+HotReloadedModule::HotReloadedModule() = default;
 
 HotReloadedModule::~HotReloadedModule()
 {
@@ -55,7 +51,7 @@ void HotReloadedModule::update_config (const ModuleConfig& new_config)
 
 void HotReloadedModule::dll_source_file_changed()
 {
-    std::cout << "Re-compiling module!" << std::endl;
+    juce::Logger::writeToLog ("Re-compiling module!");
 
     {
         juce::GenericScopedLock dll_lock { dll_reloading_mutex };
@@ -69,7 +65,7 @@ void HotReloadedModule::dll_source_file_changed()
     const auto compiler_logs = compiler.readAllProcessOutput();
     const auto end = std::chrono::steady_clock::now();
     const auto duration = std::chrono::duration_cast<std::chrono::duration<double>> (end - start);
-    std::cout << "Compilation completed in " << duration.count() << " seconds" << std::endl;
+    juce::Logger::writeToLog ("Compilation completed in " + juce::String { duration.count() } + " seconds");
 
     const auto exit_code = compiler.getExitCode();
     if (exit_code == 0)
@@ -78,8 +74,8 @@ void HotReloadedModule::dll_source_file_changed()
     }
     else
     {
-        std::cout << "Compiler failed with exit code: " << exit_code << std::endl;
-        std::cout << "Compiler logs: " << compiler_logs << std::endl;
+        juce::Logger::writeToLog ("Compiler failed with exit code: " + juce::String { exit_code });
+        juce::Logger::writeToLog ("Compiler logs: " + compiler_logs);
     }
 }
 
@@ -114,7 +110,7 @@ void HotReloadedModule::load_dll()
     if (create_proc_func == nullptr || destroy_proc_func == nullptr || prepare_proc_func == nullptr || reset_proc_func == nullptr
         || process_proc_func == nullptr)
     {
-        std::cerr << "Failed to load functions from DLL!" << std::endl;
+        juce::Logger::writeToLog ("Failed to load functions from DLL!");
         dll.close();
         return;
     }

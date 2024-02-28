@@ -59,6 +59,7 @@ DLL_EXPORT void process (void* processor, std::span<float> data)
     //     proc.z = new_z;
     // }
 
+
     for (auto& x : data)
-        x *= 0.1f;
+        x *= 0.89f;
 }

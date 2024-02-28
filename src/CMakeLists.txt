@@ -1,6 +1,7 @@
 target_sources(ChowProtoPlug PRIVATE
     ChowProtoPlug.cpp
     HotReloadedModule.cpp
+    PluginEditor.cpp
 )
 
 file(GLOB_RECURSE juce_module_sources CONFIGURE_DEPENDS
