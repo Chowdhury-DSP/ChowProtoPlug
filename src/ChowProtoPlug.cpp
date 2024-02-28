@@ -6,7 +6,7 @@ ChowProtoPlug::ChowProtoPlug()
     {
 #if JUCE_WINDOWS
         config.cmake_path ="C:/Program Files/JetBrains/CLion 2023.2/bin/cmake/win/x64/bin/cmake.exe";
-#elif JUCE__MAC
+#elif JUCE_MAC
         config.cmake_path ="/opt/homebrew/bin/cmake";
 #endif
         config.module_directory = DEFAULT_MODULE_PATH;

@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment target")
-if(WIN32)
-    set(CMAKE_SYSTEM_VERSION 7.1 CACHE STRING INTERNAL FORCE) # Windows SDK for Windows 7 and up
-endif()
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum OS X deployment target")
 project(ChowProtoPlug VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 20)

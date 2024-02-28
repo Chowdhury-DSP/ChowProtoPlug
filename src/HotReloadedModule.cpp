@@ -90,6 +90,11 @@ void HotReloadedModule::close_dll()
         for (auto* data : processor_data)
             destroy_proc_func (data);
     }
+    create_proc_func = nullptr;
+    destroy_proc_func = nullptr;
+    prepare_proc_func = nullptr;
+    reset_proc_func = nullptr;
+    process_proc_func = nullptr;
     std::fill (processor_data.begin(), processor_data.end(), nullptr);
     dll.close();
 }

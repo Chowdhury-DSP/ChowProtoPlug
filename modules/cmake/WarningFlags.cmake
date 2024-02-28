@@ -17,6 +17,7 @@ elseif((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQU
         -Wno-inconsistent-missing-destructor-override -Wshift-sign-overflow
         -Wnullable-to-nonnull-conversion -Wno-missing-field-initializers
         -Wno-ignored-qualifiers -Wpedantic -Wno-pessimizing-move
+        -Wno-nullable-to-nonnull-conversion -Wno-unqualified-std-cast-call
         # These lines suppress some custom warnings.
         # Comment them out to be more strict.
         -Wno-shadow-field-in-constructor
