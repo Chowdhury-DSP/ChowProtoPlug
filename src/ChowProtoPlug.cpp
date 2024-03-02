@@ -16,6 +16,7 @@ void ChowProtoPlug::update_config()
         config.cmake_path ="/opt/homebrew/bin/cmake";
 #endif
         config.module_directory = DEFAULT_MODULE_PATH;
+        config.module_name = "ProtoPlugTestModule";
         ModuleConfig::config_file.create();
         auto ec = glz::write_file_json (config, ModuleConfig::config_file.getFullPathName().toStdString(), std::string{});
         jassert (! ec);
