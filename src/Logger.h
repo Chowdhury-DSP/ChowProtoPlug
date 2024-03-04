@@ -16,6 +16,7 @@ struct Logger : juce::Logger
 
     void logMessage (const juce::String& message) override
     {
+        base_logger.logMessage (message);
         log_text += message.toStdString() + "\n";
         update_console();
     }
@@ -32,10 +33,10 @@ struct Logger : juce::Logger
         {
             console->setText (log_text, juce::sendNotification);
             console->moveCaretToEnd();
-            // console->scrollEditorToPositionCaret (console->getWidth(), console->getHeight());
         }
     }
 
     std::string log_text {};
     juce::TextEditor* console { nullptr };
+    chowdsp::BaseLogger base_logger;
 };

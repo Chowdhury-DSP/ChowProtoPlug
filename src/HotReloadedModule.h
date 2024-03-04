@@ -53,18 +53,32 @@ struct HotReloadedModule
     Get_Num_Float_Params_Func get_num_float_params_func = nullptr;
     using Get_Float_Param_Info_Func = void (*) (int param_index, std::string& name, float& default_value, float& start, float& end, float& center);
     Get_Float_Param_Info_Func get_float_param_info_func = nullptr;
-    using Set_Float_Param = void (*)(void*, int, float);
+    using Set_Float_Param = void (*) (void*, int, float);
     Set_Float_Param set_float_param_func = nullptr;
 
     using Get_Num_Choice_Params_Func = int (*)();
     Get_Num_Choice_Params_Func get_num_choice_params_func = nullptr;
     using Get_Choice_Param_Info_Func = void (*) (int param_index, std::string& name, std::vector<std::string>& choices, int& default_value);
     Get_Choice_Param_Info_Func get_choice_param_info_func = nullptr;
-    using Set_Choice_Param = void (*)(void*, int index, int value);
+    using Set_Choice_Param = void (*) (void*, int index, int value);
     Set_Choice_Param set_choice_param_func = nullptr;
 
     juce::dsp::ProcessSpec process_spec {};
     juce::DynamicLibrary dll {};
     juce::SpinLock dll_reloading_mutex {};
     std::array<void*, 2> processor_data {};
+
+    struct LoggingBuffer : std::stringbuf
+    {
+        int sync() override
+        {
+            auto current_str = this->str();
+            if (current_str.back() == '\n')
+                current_str = current_str.substr (0, current_str.size() - 1);
+            juce::Logger::writeToLog ("[module_log] " + current_str);
+            this->str ("");
+            return 0;
+        }
+    } logging_buffer;
+    std::streambuf* old_cout_buffer = nullptr;
 };

@@ -41,11 +41,15 @@ auto get_compile_command (const ModuleConfig& config)
 }
 } // namespace
 
-HotReloadedModule::HotReloadedModule() = default;
+HotReloadedModule::HotReloadedModule()
+{
+    old_cout_buffer = std::cout.rdbuf (&logging_buffer);
+}
 
 HotReloadedModule::~HotReloadedModule()
 {
     close_dll();
+    std::cout.rdbuf (old_cout_buffer);
 }
 
 void HotReloadedModule::update_config (const ModuleConfig& new_config)
@@ -112,8 +116,11 @@ void HotReloadedModule::load_dll()
 
     processor_data[0] = create_proc_func();
     processor_data[1] = create_proc_func();
-    for (auto* data : processor_data)
-        prepare_proc_func (data, process_spec.sampleRate, static_cast<int> (process_spec.maximumBlockSize));
+    if (process_spec.sampleRate > 0.0)
+    {
+        for (auto* data : processor_data)
+            prepare_proc_func (data, process_spec.sampleRate, static_cast<int> (process_spec.maximumBlockSize));
+    }
 }
 
 bool HotReloadedModule::load_function_table()
@@ -194,7 +201,7 @@ void HotReloadedModule::load_parameters() const
                                                name,
                                                createNormalisableRange (start, end, center),
                                                default_value,
-                                               &floatValToString,
+                                               &floatValToStringDecimal<4>,
                                                &stringToFloatVal);
         }
     }
