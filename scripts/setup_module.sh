@@ -19,6 +19,10 @@ project(${module_name} VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 20)
 
 add_library(${module_name} SHARED main.cpp)
+
+if(MSVC)
+    target_compile_definitions(${module_name} PRIVATE _USE_MATH_DEFINES=1)
+endif()
 EOF
 
 cat > proto/${module_name}/main.cpp <<EOF
@@ -89,3 +93,14 @@ echo "Setting up CMake for ${module_name}..."
     fi
     cmake --build build --config Debug --parallel
 )
+
+echo "Updating proto settings..."
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  config_file="$HOME/Library/ChowdhuryDSP/ChowProtoPlug/config.json"
+elif [[ "$OSTYPE" == "msys" ]]; then
+  config_file="$HOME/AppData/Roaming/ChowdhuryDSP/ChowProtoPlug/config.json"
+fi
+
+module_name_json=".module_name=\"${module_name}\""
+module_dir_json=".module_directory=\"$(pwd -W)/proto/${module_name}\""
+cat "${config_file}" | jq $module_name_json | jq $module_dir_json > "${config_file}"
