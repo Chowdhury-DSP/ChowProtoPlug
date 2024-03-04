@@ -3,6 +3,9 @@
 
 ChowProtoPlug::ChowProtoPlug()
 {
+    params.forwarding_params.emplace (*this, state);
+    module.params = &params;
+
     update_config();
 }
 

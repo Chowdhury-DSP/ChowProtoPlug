@@ -19,7 +19,18 @@ PluginEditor::PluginEditor (ChowProtoPlug& plug)
     };
     console_tab.addAndMakeVisible (console_tab.clear_logs_button);
 
+    params_tab.params_changed_callback = plugin.params.params_cleared.connect ([this]
+    {
+        params_tab.params_cleared();
+    });
+    params_tab.params_changed_callback = plugin.params.params_added.connect ([this]
+    {
+        params_tab.params_added (plugin.params);
+    });
+    params_tab.params_added (plugin.params);
+
     tabs.addTab ("Console", juce::Colours::black, &console_tab, false);
+    tabs.addTab ("Params", juce::Colours::black, &params_tab, false);
 
     addAndMakeVisible (tabs);
 

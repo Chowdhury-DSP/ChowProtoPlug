@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ModuleConfig.h"
+#include "ModuleParams.h"
 
 struct HotReloadedModule
 {
@@ -13,8 +14,13 @@ struct HotReloadedModule
     void process (const chowdsp::BufferView<float>&) noexcept;
 
     void dll_source_file_changed();
-    void close_dll();
     void load_dll();
+    void close_dll();
+    bool load_function_table();
+    void clear_function_table();
+
+    ModuleParams* params = nullptr;
+    void load_parameters() const;
 
     struct FileWatcher : chowdsp::FileListener
     {
@@ -31,16 +37,31 @@ struct HotReloadedModule
     ModuleConfig config;
     std::optional<FileWatcher> file_watcher;
 
-    using Create_Proc_Func = void* (*)();
+    using Create_Proc_Func = void* (*) ();
     Create_Proc_Func create_proc_func = nullptr;
-    using Destroy_Proc_Func = void (*)(void*);
+    using Destroy_Proc_Func = void (*) (void*);
     Destroy_Proc_Func destroy_proc_func = nullptr;
-    using Prepare_Proc_Func = void (*)(void*, double, int);
+
+    using Prepare_Proc_Func = void (*) (void*, double, int);
     Prepare_Proc_Func prepare_proc_func = nullptr;
-    using Reset_Proc_Func = void (*)(void*);
+    using Reset_Proc_Func = void (*) (void*);
     Reset_Proc_Func reset_proc_func = nullptr;
-    using Process_Proc_Func = void (*)(void*, std::span<float>);
+    using Process_Proc_Func = void (*) (void*, std::span<float>);
     Process_Proc_Func process_proc_func = nullptr;
+
+    using Get_Num_Float_Params_Func = int (*)();
+    Get_Num_Float_Params_Func get_num_float_params_func = nullptr;
+    using Get_Float_Param_Info_Func = void (*) (int param_index, std::string& name, float& default_value, float& start, float& end, float& center);
+    Get_Float_Param_Info_Func get_float_param_info_func = nullptr;
+    using Set_Float_Param = void (*)(void*, int, float);
+    Set_Float_Param set_float_param_func = nullptr;
+
+    using Get_Num_Choice_Params_Func = int (*)();
+    Get_Num_Choice_Params_Func get_num_choice_params_func = nullptr;
+    using Get_Choice_Param_Info_Func = void (*) (int param_index, std::string& name, std::vector<std::string>& choices, int& default_value);
+    Get_Choice_Param_Info_Func get_choice_param_info_func = nullptr;
+    using Set_Choice_Param = void (*)(void*, int index, int value);
+    Set_Choice_Param set_choice_param_func = nullptr;
 
     juce::dsp::ProcessSpec process_spec {};
     juce::DynamicLibrary dll {};

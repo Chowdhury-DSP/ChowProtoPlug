@@ -4,6 +4,7 @@
 
 #include "HotReloadedModule.h"
 #include "Logger.h"
+#include "ModuleParams.h"
 
 class ChowProtoPlug : public chowdsp::PluginBase<chowdsp::PluginStateImpl<chowdsp::ParamHolder>>
 {
@@ -20,6 +21,7 @@ public:
 
     Logger logger;
     ModuleConfig config {};
+    ModuleParams params {};
     HotReloadedModule module;
 
 private:

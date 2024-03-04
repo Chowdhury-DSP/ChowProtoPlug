@@ -1,4 +1,5 @@
 #include "HotReloadedModule.h"
+#include <format>
 
 namespace
 {
@@ -8,6 +9,12 @@ constexpr auto delete_proc_tag = "delete_processor"_sl;
 constexpr auto prepare_proc_tag = "prepare"_sl;
 constexpr auto reset_proc_tag = "reset"_sl;
 constexpr auto process_proc_tag = "process"_sl;
+constexpr auto get_num_float_params_tag = "get_num_float_params"_sl;
+constexpr auto get_float_param_info_tag = "get_float_param_info"_sl;
+constexpr auto set_float_param_tag = "set_float_param"_sl;
+constexpr auto get_num_choice_params_tag = "get_num_choice_params"_sl;
+constexpr auto get_choice_param_info_tag = "get_choice_param_info"_sl;
+constexpr auto set_choice_param_tag = "set_choice_param"_sl;
 
 auto get_dll_source_path (const ModuleConfig& config)
 {
@@ -85,22 +92,6 @@ void HotReloadedModule::dll_source_file_changed()
     }
 }
 
-void HotReloadedModule::close_dll()
-{
-    if (processor_data[0] != nullptr)
-    {
-        for (auto* data : processor_data)
-            destroy_proc_func (data);
-    }
-    create_proc_func = nullptr;
-    destroy_proc_func = nullptr;
-    prepare_proc_func = nullptr;
-    reset_proc_func = nullptr;
-    process_proc_func = nullptr;
-    std::fill (processor_data.begin(), processor_data.end(), nullptr);
-    dll.close();
-}
-
 void HotReloadedModule::load_dll()
 {
     juce::GenericScopedLock dll_lock { dll_reloading_mutex };
@@ -109,24 +100,141 @@ void HotReloadedModule::load_dll()
     juce::Logger::writeToLog ("Loading module from path: " + module_path);
     dll.open (module_path);
 
-    create_proc_func = reinterpret_cast<Create_Proc_Func> (dll.getFunction (create_proc_tag));
-    destroy_proc_func = reinterpret_cast<Destroy_Proc_Func> (dll.getFunction (delete_proc_tag));
-    prepare_proc_func = reinterpret_cast<Prepare_Proc_Func> (dll.getFunction (prepare_proc_tag));
-    reset_proc_func = reinterpret_cast<Reset_Proc_Func> (dll.getFunction (reset_proc_tag));
-    process_proc_func = reinterpret_cast<Process_Proc_Func> (dll.getFunction (process_proc_tag));
-
-    if (create_proc_func == nullptr || destroy_proc_func == nullptr || prepare_proc_func == nullptr || reset_proc_func == nullptr
-        || process_proc_func == nullptr)
+    const auto func_table_loaded = load_function_table();
+    if (! func_table_loaded)
     {
         juce::Logger::writeToLog ("Failed to load functions from DLL!");
         dll.close();
         return;
     }
 
+    load_parameters();
+
     processor_data[0] = create_proc_func();
     processor_data[1] = create_proc_func();
     for (auto* data : processor_data)
         prepare_proc_func (data, process_spec.sampleRate, static_cast<int> (process_spec.maximumBlockSize));
+}
+
+bool HotReloadedModule::load_function_table()
+{
+    create_proc_func = reinterpret_cast<Create_Proc_Func> (dll.getFunction (create_proc_tag));
+    destroy_proc_func = reinterpret_cast<Destroy_Proc_Func> (dll.getFunction (delete_proc_tag));
+    prepare_proc_func = reinterpret_cast<Prepare_Proc_Func> (dll.getFunction (prepare_proc_tag));
+    reset_proc_func = reinterpret_cast<Reset_Proc_Func> (dll.getFunction (reset_proc_tag));
+    process_proc_func = reinterpret_cast<Process_Proc_Func> (dll.getFunction (process_proc_tag));
+    get_num_float_params_func = reinterpret_cast<Get_Num_Float_Params_Func> (dll.getFunction (get_num_float_params_tag));
+    get_float_param_info_func = reinterpret_cast<Get_Float_Param_Info_Func> (dll.getFunction (get_float_param_info_tag));
+    set_float_param_func = reinterpret_cast<Set_Float_Param> (dll.getFunction (set_float_param_tag));
+    get_num_choice_params_func = reinterpret_cast<Get_Num_Choice_Params_Func> (dll.getFunction (get_num_choice_params_tag));
+    get_choice_param_info_func = reinterpret_cast<Get_Choice_Param_Info_Func> (dll.getFunction (get_choice_param_info_tag));
+    set_choice_param_func = reinterpret_cast<Set_Choice_Param> (dll.getFunction (set_choice_param_tag));
+
+    // These functions must be provided! All others are allowed to be nullptr.
+    if (create_proc_func == nullptr || destroy_proc_func == nullptr || prepare_proc_func == nullptr || reset_proc_func == nullptr
+        || process_proc_func == nullptr)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void HotReloadedModule::close_dll()
+{
+    params->clear_all_params();
+    if (processor_data[0] != nullptr)
+    {
+        for (auto* data : processor_data)
+            destroy_proc_func (data);
+    }
+    clear_function_table();
+    std::fill (processor_data.begin(), processor_data.end(), nullptr);
+    dll.close();
+}
+
+void HotReloadedModule::clear_function_table()
+{
+    create_proc_func = nullptr;
+    destroy_proc_func = nullptr;
+    prepare_proc_func = nullptr;
+    reset_proc_func = nullptr;
+    process_proc_func = nullptr;
+    get_num_float_params_func = nullptr;
+    get_float_param_info_func = nullptr;
+    set_float_param_func = nullptr;
+    get_num_choice_params_func = nullptr;
+    get_choice_param_info_func = nullptr;
+    set_choice_param_func = nullptr;
+}
+
+void HotReloadedModule::load_parameters() const
+{
+    using namespace chowdsp::ParamUtils;
+    if (get_num_float_params_func != nullptr && get_float_param_info_func != nullptr)
+    {
+        const auto num_params = get_num_float_params_func();
+        juce::Logger::writeToLog ("Module contains " + juce::String { num_params } + " float parameters!");
+        for (int i = 0; i < num_params; ++i)
+        {
+            std::string name;
+            float default_value, start, end, center;
+            get_float_param_info_func (i, name, default_value, start, end, center);
+
+            if (name.empty())
+            {
+                juce::Logger::writeToLog ("No param info provided for parameter index: " + std::to_string (i));
+                continue;
+            }
+
+            juce::Logger::writeToLog ("Adding parameter: " + name
+                                      + ", {" + std::to_string (start) + "," + std::to_string (center) + "," + std::to_string (end) + "}"
+                                      + ", default: " + std::to_string (default_value));
+            params->float_params.emplace_back ("float_param" + std::to_string (i),
+                                               name,
+                                               createNormalisableRange (start, end, center),
+                                               default_value,
+                                               &floatValToString,
+                                               &stringToFloatVal);
+        }
+    }
+
+    if (get_num_choice_params_func != nullptr && get_choice_param_info_func != nullptr)
+    {
+        const auto num_params = get_num_choice_params_func();
+        juce::Logger::writeToLog ("Module contains " + juce::String { num_params } + " choice parameters!");
+        for (int i = 0; i < num_params; ++i)
+        {
+            std::string name;
+            std::vector<std::string> choices {};
+            int default_value {};
+            get_choice_param_info_func (i, name, choices, default_value);
+
+            if (name.empty())
+            {
+                juce::Logger::writeToLog ("No param info provided for parameter index: " + std::to_string (i));
+                continue;
+            }
+
+            std::stringstream ss {};
+            std::copy (choices.begin(), choices.end(), std::ostream_iterator<std::string> (ss, ", "));
+
+            juce::Logger::writeToLog ("Adding parameter: " + name
+                                      + ", {" + ss.str() + "}"
+                                      + ", default: " + choices[(size_t) default_value]);
+
+            juce::StringArray choices_array {};
+            choices_array.ensureStorageAllocated (static_cast<int> (choices.size()));
+            for (auto& choice : choices)
+                choices_array.add (juce::String { choice });
+            params->choice_params.emplace_back ("choice_param" + std::to_string (i),
+                                               name,
+                                               choices_array,
+                                               default_value);
+        }
+    }
+
+    params->finished_loading_params();
 }
 
 void HotReloadedModule::prepare (const juce::dsp::ProcessSpec& spec)
@@ -150,7 +258,20 @@ void HotReloadedModule::process (const chowdsp::BufferView<float>& buffer) noexc
     }
 
     for (auto [ch, buffer_data] : chowdsp::buffer_iters::channels (buffer))
+    {
+        if (set_float_param_func != nullptr)
+        {
+            for (const auto [idx, param] : chowdsp::enumerate (params->float_params))
+                set_float_param_func (processor_data[(size_t) ch], static_cast<int> (idx), param->getCurrentValue());
+        }
+        if (set_choice_param_func != nullptr)
+        {
+            for (const auto [idx, param] : chowdsp::enumerate (params->choice_params))
+                set_choice_param_func (processor_data[(size_t) ch], static_cast<int> (idx), param->getIndex());
+        }
+
         process_proc_func (processor_data[(size_t) ch], buffer_data);
+    }
 
     if (! chowdsp::BufferMath::sanitizeBuffer (buffer, 10.0f))
     {

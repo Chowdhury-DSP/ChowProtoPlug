@@ -29,6 +29,30 @@ struct PluginEditor : juce::AudioProcessorEditor
         }
     } console_tab;
 
+    struct ParamsTab : juce::Component
+    {
+        chowdsp::ScopedCallback params_changed_callback;
+        std::optional<chowdsp::ParametersView> params_view;
+
+        void params_cleared()
+        {
+            params_view.reset();
+        }
+
+        void params_added (ModuleParams& params)
+        {
+            params_view.emplace (*params.param_listeners, params);
+            addAndMakeVisible (*params_view);
+            resized();
+        }
+
+        void resized() override
+        {
+            if (params_view.has_value())
+                params_view->setBounds(getLocalBounds());
+        }
+    } params_tab;
+
     juce::TabbedComponent tabs;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
