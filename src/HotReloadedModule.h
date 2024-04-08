@@ -51,7 +51,7 @@ struct HotReloadedModule
 
     using Get_Num_Float_Params_Func = int (*)();
     Get_Num_Float_Params_Func get_num_float_params_func = nullptr;
-    using Get_Float_Param_Info_Func = void (*) (int param_index, std::string& name, float& default_value, float& start, float& end, float& center);
+    using Get_Float_Param_Info_Func = void (*) (int param_index, char* name, float& default_value, float& start, float& end, float& center);
     Get_Float_Param_Info_Func get_float_param_info_func = nullptr;
     using Set_Float_Param = void (*) (void*, int, float);
     Set_Float_Param set_float_param_func = nullptr;

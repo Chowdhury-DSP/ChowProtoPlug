@@ -184,17 +184,17 @@ void HotReloadedModule::load_parameters() const
         juce::Logger::writeToLog ("Module contains " + juce::String { num_params } + " float parameters!");
         for (int i = 0; i < num_params; ++i)
         {
-            std::string name;
+            char name[128] {};
             float default_value, start, end, center;
             get_float_param_info_func (i, name, default_value, start, end, center);
 
-            if (name.empty())
+            if (name[0] == '\0')
             {
                 juce::Logger::writeToLog ("No param info provided for parameter index: " + std::to_string (i));
                 continue;
             }
 
-            juce::Logger::writeToLog ("Adding parameter: " + name
+            juce::Logger::writeToLog ("Adding parameter: " + std::string { name }
                                       + ", {" + std::to_string (start) + "," + std::to_string (center) + "," + std::to_string (end) + "}"
                                       + ", default: " + std::to_string (default_value));
             params->float_params.emplace_back ("float_param" + std::to_string (i),
