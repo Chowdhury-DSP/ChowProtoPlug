@@ -212,32 +212,38 @@ void HotReloadedModule::load_parameters() const
         juce::Logger::writeToLog ("Module contains " + juce::String { num_params } + " choice parameters!");
         for (int i = 0; i < num_params; ++i)
         {
-            std::string name;
-            std::vector<std::string> choices {};
+            char name[128] {};
+            char choices[32][128] {};
             int default_value {};
             get_choice_param_info_func (i, name, choices, default_value);
 
-            if (name.empty())
+            if (name[0] == '\0')
             {
                 juce::Logger::writeToLog ("No param info provided for parameter index: " + std::to_string (i));
                 continue;
             }
 
-            std::stringstream ss {};
-            std::copy (choices.begin(), choices.end(), std::ostream_iterator<std::string> (ss, ", "));
+            juce::StringArray choices_array {};
+            choices_array.ensureStorageAllocated (static_cast<int> (std::size (choices)));
+            for (auto& choice : choices)
+            {
+                if (choice[0] == '\0')
+                    break;
+                choices_array.add (juce::String { choice });
+            }
 
-            juce::Logger::writeToLog ("Adding parameter: " + name
+            std::stringstream ss {};
+            std::copy (std::begin (choices_array),
+                       std::end (choices_array),
+                       std::ostream_iterator<juce::String> (ss, ", "));
+            juce::Logger::writeToLog ("Adding parameter: " + std::string { name }
                                       + ", {" + ss.str() + "}"
                                       + ", default: " + choices[(size_t) default_value]);
 
-            juce::StringArray choices_array {};
-            choices_array.ensureStorageAllocated (static_cast<int> (choices.size()));
-            for (auto& choice : choices)
-                choices_array.add (juce::String { choice });
             params->choice_params.emplace_back ("choice_param" + std::to_string (i),
-                                               name,
-                                               choices_array,
-                                               default_value);
+                                                name,
+                                                choices_array,
+                                                default_value);
         }
     }
 

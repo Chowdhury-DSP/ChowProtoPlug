@@ -6,27 +6,37 @@
 struct HotReloadedModule
 {
     HotReloadedModule();
+
     ~HotReloadedModule();
 
     void update_config (const ModuleConfig& config);
 
     void prepare (const juce::dsp::ProcessSpec&);
+
     void process (const chowdsp::BufferView<float>&) noexcept;
 
     void dll_source_file_changed();
+
     void load_dll();
+
     void close_dll();
+
     bool load_function_table();
+
     void clear_function_table();
 
     ModuleParams* params = nullptr;
+
     void load_parameters() const;
 
     struct FileWatcher : chowdsp::FileListener
     {
-        explicit FileWatcher (const juce::File& file) : chowdsp::FileListener (file, 1) {}
+        explicit FileWatcher (const juce::File& file) : chowdsp::FileListener (file, 1)
+        {
+        }
 
         std::function<void()> on_file_change {};
+
         void listenerFileChanged() override
         {
             if (on_file_change)
@@ -51,14 +61,14 @@ struct HotReloadedModule
 
     using Get_Num_Float_Params_Func = int (*)();
     Get_Num_Float_Params_Func get_num_float_params_func = nullptr;
-    using Get_Float_Param_Info_Func = void (*) (int param_index, char* name, float& default_value, float& start, float& end, float& center);
+    using Get_Float_Param_Info_Func = void (*) (int param_index, char (&name)[128], float& default_value, float& start, float& end, float& center);
     Get_Float_Param_Info_Func get_float_param_info_func = nullptr;
     using Set_Float_Param = void (*) (void*, int, float);
     Set_Float_Param set_float_param_func = nullptr;
 
     using Get_Num_Choice_Params_Func = int (*)();
     Get_Num_Choice_Params_Func get_num_choice_params_func = nullptr;
-    using Get_Choice_Param_Info_Func = void (*) (int param_index, std::string& name, std::vector<std::string>& choices, int& default_value);
+    using Get_Choice_Param_Info_Func = void (*) (int param_index, char (&name)[128], char (&choices)[32][128], int& default_value);
     Get_Choice_Param_Info_Func get_choice_param_info_func = nullptr;
     using Set_Choice_Param = void (*) (void*, int index, int value);
     Set_Choice_Param set_choice_param_func = nullptr;
@@ -80,5 +90,6 @@ struct HotReloadedModule
             return 0;
         }
     } logging_buffer;
+
     std::streambuf* old_cout_buffer = nullptr;
 };
