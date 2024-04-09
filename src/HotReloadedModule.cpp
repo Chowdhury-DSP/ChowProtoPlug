@@ -15,6 +15,7 @@ constexpr auto set_float_param_tag = "set_float_param"_sl;
 constexpr auto get_num_choice_params_tag = "get_num_choice_params"_sl;
 constexpr auto get_choice_param_info_tag = "get_choice_param_info"_sl;
 constexpr auto set_choice_param_tag = "set_choice_param"_sl;
+constexpr std::string_view cmake_path { CMAKE_EXE_PATH };
 
 auto get_dll_source_path (const ModuleConfig& config)
 {
@@ -35,9 +36,20 @@ auto get_dll_bin_path (const ModuleConfig& config)
 #endif
 }
 
+auto get_configure_command (const ModuleConfig& config)
+{
+    return chowdsp::toString (cmake_path)
+           + " \"-DCMAKE_MAKE_PROGRAM=" + CMAKE_MAKE_PROGRAM + "\""
+           + " \"-DCMAKE_C_COMPILER=" + CMAKE_C_COMPILER + "\""
+           + " \"-DCMAKE_CXX_COMPILER=" + CMAKE_CXX_COMPILER + "\""
+           + " -G \"" + CMAKE_GENERATOR + "\""
+           + " -S \"" + juce::File { config.module_directory }.getFullPathName() + "\""
+           + " -B \"" + get_dll_build_dir_path (config).getFullPathName() + "\"";
+}
+
 auto get_compile_command (const ModuleConfig& config)
 {
-    return juce::String { config.cmake_path } + " --build " + get_dll_build_dir_path (config).getFullPathName() + " --parallel";
+    return chowdsp::toString (cmake_path) + " --build " + get_dll_build_dir_path (config).getFullPathName() + " --parallel";
 }
 } // namespace
 
@@ -55,6 +67,24 @@ HotReloadedModule::~HotReloadedModule()
 void HotReloadedModule::update_config (const ModuleConfig& new_config)
 {
     config = new_config;
+
+    get_dll_build_dir_path (config).deleteRecursively();
+
+    juce::ChildProcess configure {};
+    configure.start (get_configure_command (config));
+    const auto start = std::chrono::steady_clock::now();
+    const auto compiler_logs = configure.readAllProcessOutput();
+    const auto end = std::chrono::steady_clock::now();
+    const auto duration = std::chrono::duration_cast<std::chrono::duration<double>> (end - start);
+    juce::Logger::writeToLog ("Configuration completed in " + juce::String { duration.count() } + " seconds");
+
+    const auto exit_code = configure.getExitCode();
+    if (exit_code != 0)
+    {
+        juce::Logger::writeToLog ("Configuration failed with exit code: " + juce::String { exit_code });
+        juce::Logger::writeToLog ("Configuration logs: " + compiler_logs);
+    }
+
     file_watcher.emplace (get_dll_source_path (config));
     file_watcher->on_file_change = [this]
     { dll_source_file_changed(); };
@@ -62,6 +92,7 @@ void HotReloadedModule::update_config (const ModuleConfig& new_config)
 
 void HotReloadedModule::dll_source_file_changed()
 {
+    juce::Logger::writeToLog ("-----------------------------------------");
     juce::Logger::writeToLog ("Re-compiling module!");
 
     {
@@ -69,9 +100,9 @@ void HotReloadedModule::dll_source_file_changed()
         close_dll();
     }
 
-    if (! juce::File { config.cmake_path }.existsAsFile())
+    if (! juce::File { chowdsp::toString (cmake_path) }.existsAsFile())
     {
-        juce::Logger::writeToLog ("CMake executable not found! Path: " + config.cmake_path);
+        juce::Logger::writeToLog ("CMake executable not found! Path: " + chowdsp::toString (cmake_path));
         return;
     }
 

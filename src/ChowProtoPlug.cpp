@@ -13,15 +13,10 @@ void ChowProtoPlug::update_config()
 {
     const auto fallback_config = [this]
     {
-#if JUCE_WINDOWS
-        config.cmake_path ="C:/Program Files/JetBrains/CLion 2023.2/bin/cmake/win/x64/bin/cmake.exe";
-#elif JUCE_MAC
-        config.cmake_path ="/opt/homebrew/bin/cmake";
-#endif
         config.module_directory = DEFAULT_MODULE_PATH;
         config.module_name = "ProtoPlugTestModule";
         ModuleConfig::config_file.create();
-        [[maybe_unused]] auto ec = glz::write_file_json (config, ModuleConfig::config_file.getFullPathName().toStdString(), std::string{});
+        [[maybe_unused]] const auto ec = glz::write_file_json (config, ModuleConfig::config_file.getFullPathName().toStdString(), std::string{});
         jassert (! ec);
     };
 
