@@ -33,6 +33,13 @@ endif()
 add_subdirectory(src)
 include_directories(src)
 
+message(STATUS "Forwarding CMake/Compiler info\n"
+    "CMAKE_EXE_PATH=${CMAKE_COMMAND}\n"
+    "CMAKE_GENERATOR=${CMAKE_GENERATOR}\n"
+    "CMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}\n"
+    "CMAKE_C_COMPILER=${CMAKE_C_COMPILER}\n"
+    "CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+)
 target_compile_definitions(ChowProtoPlug PUBLIC
     JUCE_VST3_CAN_REPLACE_VST2=0
     DEFAULT_MODULE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/TestModule"

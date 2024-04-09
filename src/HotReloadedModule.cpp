@@ -49,7 +49,9 @@ auto get_configure_command (const ModuleConfig& config)
 
 auto get_compile_command (const ModuleConfig& config)
 {
-    return chowdsp::toString (cmake_path) + " --build " + get_dll_build_dir_path (config).getFullPathName() + " --parallel";
+    return chowdsp::toString (cmake_path)
+           + " --build " + get_dll_build_dir_path (config).getFullPathName()
+           + " --parallel" + " --config Debug";
 }
 } // namespace
 
@@ -70,6 +72,10 @@ void HotReloadedModule::update_config (const ModuleConfig& new_config)
 
     get_dll_build_dir_path (config).deleteRecursively();
 
+#if JUCE_MAC
+    // @TODO: figure out why juce::ChildProcess doesn't work here!
+    const auto exit_code = std::system (get_configure_command (config).toRawUTF8());
+#else
     juce::ChildProcess configure {};
     configure.start (get_configure_command (config));
     const auto start = std::chrono::steady_clock::now();
@@ -77,12 +83,12 @@ void HotReloadedModule::update_config (const ModuleConfig& new_config)
     const auto end = std::chrono::steady_clock::now();
     const auto duration = std::chrono::duration_cast<std::chrono::duration<double>> (end - start);
     juce::Logger::writeToLog ("Configuration completed in " + juce::String { duration.count() } + " seconds");
-
+    juce::Logger::writeToLog ("Configuration logs: " + compiler_logs);
     const auto exit_code = configure.getExitCode();
+#endif
     if (exit_code != 0)
     {
         juce::Logger::writeToLog ("Configuration failed with exit code: " + juce::String { exit_code });
-        juce::Logger::writeToLog ("Configuration logs: " + compiler_logs);
     }
 
     file_watcher.emplace (get_dll_source_path (config));
@@ -225,13 +231,12 @@ void HotReloadedModule::load_parameters() const
                 continue;
             }
 
-            chowdsp::log ("Adding parameter: {}, {{{},{},{}}}, default: {}",
+            std::array range_info { start, center, end };
+            chowdsp::log ("Adding parameter: {}, {}, default: {}",
                           name,
-                          start,
-                          center,
-                          end,
+                          std::span<float> { range_info },
                           default_value);
-            params->float_params.emplace_back (chowdsp::jformat ("float_param_{}", i),
+            params->float_params.emplace_back (chowdsp::toString (chowdsp::format ("float_param_{}", i)),
                                                name,
                                                createNormalisableRange (start, end, center),
                                                default_value,
@@ -270,12 +275,12 @@ void HotReloadedModule::load_parameters() const
             std::copy (std::begin (choices_array),
                        std::end (choices_array),
                        std::ostream_iterator<juce::String> (ss, ", "));
-            chowdsp::log ("Adding parameter: {}, {{{}}}, default: {}",
+            chowdsp::log ("Adding parameter: {}, {}, default: {}",
                           name,
                           std::span { choices_array.begin(), choices_array.end() },
                           choices[(size_t) default_value]);
 
-            params->choice_params.emplace_back (chowdsp::jformat ("choice_param_{}", i),
+            params->choice_params.emplace_back (chowdsp::toString (chowdsp::format ("choice_param_{}", i)),
                                                 name,
                                                 choices_array,
                                                 default_value);
