@@ -1,5 +1,5 @@
 #include "HotReloadedModule.h"
-#include <format>
+#include <chowdsp_logging/chowdsp_logging.h>
 
 namespace
 {
@@ -102,7 +102,7 @@ void HotReloadedModule::dll_source_file_changed()
 
     if (! juce::File { chowdsp::toString (cmake_path) }.existsAsFile())
     {
-        juce::Logger::writeToLog ("CMake executable not found! Path: " + chowdsp::toString (cmake_path));
+        chowdsp::log ("CMake executable not found! Path: {}", cmake_path);
         return;
     }
 
@@ -113,7 +113,7 @@ void HotReloadedModule::dll_source_file_changed()
     const auto compiler_logs = compiler.readAllProcessOutput();
     const auto end = std::chrono::steady_clock::now();
     const auto duration = std::chrono::duration_cast<std::chrono::duration<double>> (end - start);
-    juce::Logger::writeToLog ("Compilation completed in " + juce::String { duration.count() } + " seconds");
+    chowdsp::log ("Compilation completed in {:.2f} seconds", duration.count());
 
     const auto exit_code = compiler.getExitCode();
     if (exit_code == 0)
@@ -122,8 +122,8 @@ void HotReloadedModule::dll_source_file_changed()
     }
     else
     {
-        juce::Logger::writeToLog ("Compiler failed with exit code: " + juce::String { exit_code });
-        juce::Logger::writeToLog ("Compiler logs: " + compiler_logs);
+        chowdsp::log ("Compiler failed with exit code: {}", exit_code);
+        chowdsp::log ("Compiler logs: {}", compiler_logs);
     }
 }
 
@@ -132,7 +132,7 @@ void HotReloadedModule::load_dll()
     juce::GenericScopedLock dll_lock { dll_reloading_mutex };
 
     const auto module_path = get_dll_bin_path (config).getFullPathName();
-    juce::Logger::writeToLog ("Loading module from path: " + module_path);
+    chowdsp::log ("Loading module from path: {}", module_path);
     dll.open (module_path);
 
     const auto func_table_loaded = load_function_table();
@@ -212,7 +212,7 @@ void HotReloadedModule::load_parameters() const
     if (get_num_float_params_func != nullptr && get_float_param_info_func != nullptr)
     {
         const auto num_params = get_num_float_params_func();
-        juce::Logger::writeToLog ("Module contains " + juce::String { num_params } + " float parameters!");
+        chowdsp::log ("Module contains {:d} float parameters!", num_params);
         for (int i = 0; i < num_params; ++i)
         {
             char name[128] {};
@@ -221,14 +221,17 @@ void HotReloadedModule::load_parameters() const
 
             if (name[0] == '\0')
             {
-                juce::Logger::writeToLog ("No param info provided for parameter index: " + std::to_string (i));
+                chowdsp::log ("No param info provided for parameter index: {:d}", i);
                 continue;
             }
 
-            juce::Logger::writeToLog ("Adding parameter: " + std::string { name }
-                                      + ", {" + std::to_string (start) + "," + std::to_string (center) + "," + std::to_string (end) + "}"
-                                      + ", default: " + std::to_string (default_value));
-            params->float_params.emplace_back ("float_param" + std::to_string (i),
+            chowdsp::log ("Adding parameter: {}, {{{},{},{}}}, default: {}",
+                          name,
+                          start,
+                          center,
+                          end,
+                          default_value);
+            params->float_params.emplace_back (chowdsp::jformat ("float_param_{}", i),
                                                name,
                                                createNormalisableRange (start, end, center),
                                                default_value,
@@ -240,7 +243,7 @@ void HotReloadedModule::load_parameters() const
     if (get_num_choice_params_func != nullptr && get_choice_param_info_func != nullptr)
     {
         const auto num_params = get_num_choice_params_func();
-        juce::Logger::writeToLog ("Module contains " + juce::String { num_params } + " choice parameters!");
+        chowdsp::log ("Module contains {} choice parameters!", num_params);
         for (int i = 0; i < num_params; ++i)
         {
             char name[128] {};
@@ -250,7 +253,7 @@ void HotReloadedModule::load_parameters() const
 
             if (name[0] == '\0')
             {
-                juce::Logger::writeToLog ("No param info provided for parameter index: " + std::to_string (i));
+                chowdsp::log ("No param info provided for parameter index: {}", i);
                 continue;
             }
 
@@ -267,11 +270,12 @@ void HotReloadedModule::load_parameters() const
             std::copy (std::begin (choices_array),
                        std::end (choices_array),
                        std::ostream_iterator<juce::String> (ss, ", "));
-            juce::Logger::writeToLog ("Adding parameter: " + std::string { name }
-                                      + ", {" + ss.str() + "}"
-                                      + ", default: " + choices[(size_t) default_value]);
+            chowdsp::log ("Adding parameter: {}, {{{}}}, default: {}",
+                          name,
+                          std::span { choices_array.begin(), choices_array.end() },
+                          choices[(size_t) default_value]);
 
-            params->choice_params.emplace_back ("choice_param" + std::to_string (i),
+            params->choice_params.emplace_back (chowdsp::jformat ("choice_param_{}", i),
                                                 name,
                                                 choices_array,
                                                 default_value);
