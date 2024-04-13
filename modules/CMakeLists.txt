@@ -18,6 +18,7 @@ target_link_libraries(juce_plugin_modules
         chowdsp::chowdsp_plugin_state
         chowdsp::chowdsp_plugin_utils
         chowdsp::chowdsp_gui
+        chowdsp::chowdsp_visualizers
         chowdsp::chowdsp_dsp_utils
         glaze::glaze
     PUBLIC

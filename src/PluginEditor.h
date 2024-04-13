@@ -2,6 +2,8 @@
 
 #include <pch.h>
 
+#include "visualizers/Oscilloscope.h"
+
 class ChowProtoPlug;
 struct PluginEditor : juce::AudioProcessorEditor
 {
@@ -52,6 +54,29 @@ struct PluginEditor : juce::AudioProcessorEditor
                 params_view->setBounds(getLocalBounds());
         }
     } params_tab;
+
+    struct VizTab : juce::Component
+    {
+        std::optional<viz::ScopeComponent> scope;
+        std::optional<viz::Spectrum_Display> spectrum;
+
+        void paint (juce::Graphics& g) override
+        {
+            g.fillAll (juce::Colours::darkgrey);
+        }
+
+        void resized() override
+        {
+            auto b = getLocalBounds();
+            const auto viz_row_height = proportionOfHeight (0.333f);
+            const auto pad = proportionOfWidth (0.005f);
+
+            if (scope.has_value())
+                scope->setBounds (b.removeFromTop (viz_row_height).reduced (pad));
+            if (spectrum.has_value())
+                spectrum->setBounds (b.removeFromTop (viz_row_height).reduced (pad));
+        }
+    } viz_tab;
 
     juce::TabbedComponent tabs;
 

@@ -29,9 +29,14 @@ PluginEditor::PluginEditor (ChowProtoPlug& plug)
     });
     params_tab.params_added (plugin.params);
 
+    viz_tab.scope.emplace (plugin.scope_task);
+    viz_tab.addAndMakeVisible (*viz_tab.scope);
+    viz_tab.spectrum.emplace (plugin.input_spectrum, plugin.output_spectrum);
+    viz_tab.addAndMakeVisible (*viz_tab.spectrum);
+
     tabs.addTab ("Console", juce::Colours::black, &console_tab, false);
     tabs.addTab ("Params", juce::Colours::black, &params_tab, false);
-
+    tabs.addTab ("Viz", juce::Colours::black, &viz_tab, false);
     addAndMakeVisible (tabs);
 
     settings_button.onClick = [this]

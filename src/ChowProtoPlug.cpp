@@ -44,11 +44,20 @@ void ChowProtoPlug::prepareToPlay (double sampleRate, int samplesPerBlock)
         static_cast<uint32_t> (samplesPerBlock),
         static_cast<uint32_t> (getMainBusNumInputChannels()),
     });
+
+    scope_task.prepare (sampleRate, samplesPerBlock, getMainBusNumInputChannels());
+    input_spectrum.prepare (sampleRate, samplesPerBlock, getMainBusNumInputChannels());
+    output_spectrum.prepare (sampleRate, samplesPerBlock, getMainBusNumInputChannels());
 }
 
 void ChowProtoPlug::processAudioBlock (juce::AudioBuffer<float>& buffer)
 {
+    input_spectrum.pushSamples (buffer);
+
     module.process (buffer);
+
+    scope_task.pushSamples (buffer);
+    output_spectrum.pushSamples (buffer);
 }
 
 juce::AudioProcessorEditor* ChowProtoPlug::createEditor()

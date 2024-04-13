@@ -16,6 +16,9 @@ setup_source_group(SRCS SOURCES
     HotReloadedModule.cpp
     ModuleParams.cpp
     PluginEditor.cpp
+
+    visualizers/Oscilloscope.cpp
+    visualizers/SpectrumAnalyzer.cpp
 )
 
 file(GLOB_RECURSE juce_module_sources CONFIGURE_DEPENDS
