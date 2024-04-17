@@ -53,6 +53,32 @@ auto get_compile_command (const ModuleConfig& config)
            + " --build " + get_dll_build_dir_path (config).getFullPathName()
            + " --parallel" + " --config Debug";
 }
+
+struct Command
+{
+    int result = 0;
+    juce::String output {};
+    std::chrono::duration<double> duration {};
+
+    explicit Command (const juce::String& cmd)
+    {
+        const auto out_file = ModuleConfig::config_file.getSiblingFile ("cmd_out.txt");
+        [[maybe_unused]] const auto _ = out_file.create();
+        const auto full_cmd = cmd + " >" + out_file.getFullPathName();
+
+        const auto start = std::chrono::steady_clock::now();
+        result = std::system (full_cmd.toRawUTF8());
+        const auto end = std::chrono::steady_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::duration<double>> (end - start);
+
+        output = out_file.loadFileAsString()
+#if JUCE_WINDOWS
+                     .upToLastOccurrenceOf ("\r\n", false, false);
+#else
+                     .upToLastOccurrenceOf ("\n", false, false);
+#endif
+    }
+};
 } // namespace
 
 HotReloadedModule::HotReloadedModule()
@@ -70,30 +96,27 @@ void HotReloadedModule::update_config (const ModuleConfig& new_config)
 {
     config = new_config;
 
-    get_dll_build_dir_path (config).deleteRecursively();
-
-#if JUCE_MAC
-    // @TODO: figure out why juce::ChildProcess doesn't work here!
-    const auto exit_code = std::system (get_configure_command (config).toRawUTF8());
-#else
-    juce::ChildProcess configure {};
-    configure.start (get_configure_command (config));
-    const auto start = std::chrono::steady_clock::now();
-    const auto compiler_logs = configure.readAllProcessOutput();
-    const auto end = std::chrono::steady_clock::now();
-    const auto duration = std::chrono::duration_cast<std::chrono::duration<double>> (end - start);
-    juce::Logger::writeToLog ("Configuration completed in " + juce::String { duration.count() } + " seconds");
-    juce::Logger::writeToLog ("Configuration logs: " + compiler_logs);
-    const auto exit_code = configure.getExitCode();
-#endif
-    if (exit_code != 0)
-    {
-        juce::Logger::writeToLog ("Configuration failed with exit code: " + juce::String { exit_code });
-    }
+    // get_dll_build_dir_path (config).deleteRecursively();
+    run_cmake_configure();
 
     file_watcher.emplace (get_dll_source_path (config));
     file_watcher->on_file_change = [this]
     { dll_source_file_changed(); };
+}
+
+void HotReloadedModule::run_cmake_configure()
+{
+    juce::Logger::writeToLog ("-----------------------------------------");
+    juce::Logger::writeToLog ("Re-configuring module!");
+
+    const Command cmake_command { get_configure_command (config) };
+    juce::Logger::writeToLog ("Configuration completed in " + juce::String { cmake_command.duration.count() } + " seconds");
+    juce::Logger::writeToLog ("Configuration logs: " + cmake_command.output);
+    const auto exit_code = cmake_command.result;
+    if (exit_code != 0)
+        juce::Logger::writeToLog ("Configuration failed with exit code: " + juce::String { exit_code });
+
+    dll_source_file_changed();
 }
 
 void HotReloadedModule::dll_source_file_changed()
@@ -112,16 +135,10 @@ void HotReloadedModule::dll_source_file_changed()
         return;
     }
 
-    juce::ChildProcess compiler {};
-    compiler.start (get_compile_command (config));
+    Command build_command { get_compile_command (config) };
+    chowdsp::log ("Compilation completed in {:.2f} seconds", build_command.duration.count());
 
-    const auto start = std::chrono::steady_clock::now();
-    const auto compiler_logs = compiler.readAllProcessOutput();
-    const auto end = std::chrono::steady_clock::now();
-    const auto duration = std::chrono::duration_cast<std::chrono::duration<double>> (end - start);
-    chowdsp::log ("Compilation completed in {:.2f} seconds", duration.count());
-
-    const auto exit_code = compiler.getExitCode();
+    const auto exit_code = build_command.result;
     if (exit_code == 0)
     {
         load_dll();
@@ -129,7 +146,7 @@ void HotReloadedModule::dll_source_file_changed()
     else
     {
         chowdsp::log ("Compiler failed with exit code: {}", exit_code);
-        chowdsp::log ("Compiler logs: {}", compiler_logs);
+        chowdsp::log ("Compiler logs: {}", build_command.output);
     }
 }
 

@@ -16,6 +16,7 @@ struct PluginEditor : juce::AudioProcessorEditor
     ChowProtoPlug& plugin;
 
     juce::TextButton recompile_button { "RECOMPILE" };
+    juce::TextButton reconfigure_button { "RECONFIGURE" };
     juce::TextButton settings_button { "SETTINGS" };
 
     struct ConsoleTab : juce::Component

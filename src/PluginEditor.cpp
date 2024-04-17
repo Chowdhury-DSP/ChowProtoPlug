@@ -50,6 +50,12 @@ PluginEditor::PluginEditor (ChowProtoPlug& plug)
     };
     addAndMakeVisible (settings_button);
 
+    reconfigure_button.onClick = [this]
+    {
+        plugin.module.run_cmake_configure();
+    };
+    addAndMakeVisible (reconfigure_button);
+
     recompile_button.onClick = [this]
     {
         plugin.module.dll_source_file_changed();
@@ -76,5 +82,6 @@ void PluginEditor::resized()
 
     tabs.setBounds (b.removeFromTop (proportionOfHeight (0.95f)).reduced (5));
     settings_button.setBounds (b.removeFromLeft (proportionOfWidth (0.15f)).reduced (2));
+    reconfigure_button.setBounds (b.removeFromLeft (proportionOfWidth (0.15f)).reduced (2));
     recompile_button.setBounds (b.removeFromLeft (proportionOfWidth (0.15f)).reduced (2));
 }

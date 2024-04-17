@@ -15,14 +15,13 @@ struct HotReloadedModule
 
     void process (const chowdsp::BufferView<float>&) noexcept;
 
+    void run_cmake_configure();
     void dll_source_file_changed();
 
     void load_dll();
-
     void close_dll();
 
     bool load_function_table();
-
     void clear_function_table();
 
     ModuleParams* params = nullptr;
