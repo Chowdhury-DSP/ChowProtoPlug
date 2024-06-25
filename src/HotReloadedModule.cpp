@@ -51,6 +51,7 @@ auto get_compile_command (const ModuleConfig& config)
 {
     return chowdsp::toString (cmake_path)
            + " --build " + get_dll_build_dir_path (config).getFullPathName()
+           + " --target " + config.module_name
            + " --parallel" + " --config Debug";
 }
 
